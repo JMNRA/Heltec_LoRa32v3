@@ -2,7 +2,10 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <RadioLib.h>
-#include <U8g2lib.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// #include <U8g2lib.h>
 
 // Heltec LoRa32 v3 OLED PINS
 #define OLED_SDA 17
@@ -19,10 +22,36 @@
 #define LORA_BUSY 13
 
 SX1262 radio = new Module(LORA_CS, LORA_DIO1, LORA_NRST, LORA_BUSY);
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RST);
 
-U8G2_SSD1306_128X64_NONAME_1_SW_I2C u8g2(U8G2_R0, /* clock=*/OLED_SCL, /* data=*/OLED_SDA, /* reset=*/OLED_RST);
+//  U8G2_SSD1306_128X64_NONAME_1_SW_I2C u8g2(U8G2_R0, /* clock=*/OLED_SCL, /* data=*/OLED_SDA, /* reset=*/OLED_RST);
 // U8G2_SSD1306_128X64_NONAME_1_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
 // U8G2_SSD1306_128X64_NONAME_1_SW_I2C u8g2(U8G2_R0, /* clock=*/ 16, /* data=*/ 17, /* reset=*/ U8X8_PIN_NONE);   // ESP32 Thing, pure SW emulated I2C
+
+void initializeDisplay()
+{
+
+  Serial.println("Inicializando display...");
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0X3c))
+  {
+    Serial.println("Fallo al iniciar el display");
+    for (;;)
+      ;
+  }
+
+  Serial.println("Display inicializado!!!");
+  display.clearDisplay();
+
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println("Welcome to LoRa");
+
+  display.setTextSize(1);
+  display.println("Lora Receiver");
+  display.display();
+}
 
 void initLoRa()
 {
@@ -30,6 +59,7 @@ void initLoRa()
   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
 
   int state = radio.begin();
+  radio.setFrequency(915);
   if (state == RADIOLIB_ERR_NONE)
   {
     Serial.println(F("EXITO!"));
@@ -103,6 +133,7 @@ void setup()
 {
   Serial.begin(9600);
   initLoRa();
+  initializeDisplay();
 }
 
 void loop()
